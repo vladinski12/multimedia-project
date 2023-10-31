@@ -66,7 +66,7 @@ const initIndicatorSelect = (indicators) => {
     select.appendChild(option);
   });
   select.onchange = (event) => {
-    console.log(event.target.value);
+    document.querySelector("#graph-container > svg")?.remove();
   };
 };
 
@@ -80,10 +80,21 @@ const initCountrySelect = (countries) => {
   });
   select.onchange = (event) => {
     document.querySelector("#graph-container > svg")?.remove();
+  };
+};
+
+const initCreateChartButton = () => {
+  document.querySelector("#create-chart-button").onclick = () => {
+    if (!parsedData) return alert("Datele nu au fost incarcate");
+    const indicatorSelect = document.querySelector("#indicator-select");
+    const countrySelect = document.querySelector("#country-select");
+    document.querySelector("#graph-container > svg")?.remove();
     const newSVG = createSVG(
       parsedData
         .filter(
-          (data) => data.tara === event.target.value && data.indicator === "PIB"
+          (data) =>
+            data.indicator === indicators[indicatorSelect.value].code &&
+            data.tara === countrySelect.value
         )
         .map((data) => ({ valoare: data.valoare, an: data.an }))
     );
@@ -141,12 +152,14 @@ const parseEurostatData = (data) => {
 };
 
 const createSVG = (data) => {
-  const maxValue = Math.max(...data.map((obj) => obj.valoare));
   const container = document.querySelector("#graph-container");
+  const maxValue = Math.max(...data.map((obj) => obj.valoare));
   const barWidth = 50;
   const spacing = 10;
+  const yOffset = 30;
 
-  container.clientWidth = 15 * (barWidth + spacing);
+  //container.style.width = `${(data.length - 1) * (barWidth + spacing)}px`;
+
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "100%");
@@ -160,25 +173,39 @@ const createSVG = (data) => {
     bar.setAttribute(
       "y",
       container.clientHeight -
-        (((obj.valoare * 100) / maxValue) * container.clientHeight) / 100
+        ((obj.valoare / maxValue) * container.clientHeight - yOffset)
     );
     bar.setAttribute("width", barWidth);
     bar.setAttribute(
       "height",
-      (((obj.valoare * 100) / maxValue) * container.clientHeight) / 100
+      (obj.valoare / maxValue) * (container.clientHeight - yOffset)
     );
     bar.setAttribute("fill", "red");
     svg.appendChild(bar);
 
-    // const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-    // text.setAttribute("class", "bar-text");
-    // text.setAttribute(
-    //   "x",
-    //   xOffset + index * (barWidth + spacing) + barWidth / 2
-    // );
-    // text.setAttribute("y", 290 - value);
-    // text.textContent = value;
-    // svg.appendChild(text);
+    const textYear = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
+    textYear.setAttribute("class", "bar-text");
+    textYear.setAttribute("x", index * (barWidth + spacing) + barWidth / 6);
+    textYear.setAttribute("y", container.clientHeight - yOffset / 2);
+    textYear.textContent = obj.an;
+    svg.appendChild(textYear);
+
+    const textValue = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text"
+    );
+    textValue.setAttribute("class", "bar-text");
+    textValue.setAttribute("x", index * (barWidth + spacing) + barWidth / 6);
+    textValue.setAttribute(
+      "y",
+      container.clientHeight -
+        ((obj.valoare / maxValue) * container.clientHeight - yOffset)
+    );
+    textValue.textContent = obj.valoare;
+    svg.appendChild(textValue);
   }
   return svg;
 };
@@ -186,8 +213,8 @@ const createSVG = (data) => {
 document.addEventListener("DOMContentLoaded", async () => {
   initIndicatorSelect(indicators);
   initCountrySelect(countries);
+  initCreateChartButton();
 
   const rawData = await getRawEurostatData(indicators);
   parsedData = parseEurostatData(rawData);
-  console.log(parsedData);
 });
