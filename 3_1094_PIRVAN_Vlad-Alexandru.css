@@ -1,4 +1,42 @@
+* {
+  border: 1px solid red;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+main * {
+  margin: 1rem 1rem;
+}
+
 #graph-container {
+  height: 20rem;
+  width: 56.25rem;
+  margin: 2rem 2rem;
+  border: 1px solid black;
+}
+
+#tooltip {
+  position: absolute;
+  display: none;
+  background: cornsilk;
+  border: 1px solid black;
+  border-radius: 5px;
+  padding: 5px;
+}
+
+#bubble-chart-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#bubble-chart {
   height: 20rem;
   width: 56.25rem;
   margin: 2rem 2rem;

@@ -1,3 +1,7 @@
+//*
+//* GLOBAL VARIABLES
+//*
+
 let parsedData;
 
 const indicators = {
@@ -48,6 +52,10 @@ const countries = [
   "SE",
 ];
 
+//*
+//* FUNCTIONS FOR FETCHING DATA
+//*
+
 const last15Years = [...Array(15).keys()].map(
   (year) => new Date().getFullYear() - year
 );
@@ -56,51 +64,6 @@ const eurostatURL = (indicator, time) =>
   `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${indicator}&time=${time}${countries
     .map((country) => `&geo=${country}`)
     .join("")}`;
-
-const initIndicatorSelect = (indicators) => {
-  const select = document.querySelector("#indicator-select");
-  Object.keys(indicators).forEach((indicator) => {
-    const option = document.createElement("option");
-    option.value = indicator;
-    option.innerText = indicators[indicator].name;
-    select.appendChild(option);
-  });
-  select.onchange = (event) => {
-    document.querySelector("#graph-container > svg")?.remove();
-  };
-};
-
-const initCountrySelect = (countries) => {
-  const select = document.querySelector("#country-select");
-  countries.forEach((country) => {
-    const option = document.createElement("option");
-    option.value = country;
-    option.innerText = country;
-    select.appendChild(option);
-  });
-  select.onchange = (event) => {
-    document.querySelector("#graph-container > svg")?.remove();
-  };
-};
-
-const initCreateChartButton = () => {
-  document.querySelector("#create-chart-button").onclick = () => {
-    if (!parsedData) return alert("Datele nu au fost incarcate");
-    const indicatorSelect = document.querySelector("#indicator-select");
-    const countrySelect = document.querySelector("#country-select");
-    document.querySelector("#graph-container > svg")?.remove();
-    const newSVG = createSVG(
-      parsedData
-        .filter(
-          (data) =>
-            data.indicator === indicators[indicatorSelect.value].code &&
-            data.tara === countrySelect.value
-        )
-        .map((data) => ({ valoare: data.valoare, an: data.an }))
-    );
-    document.querySelector("#graph-container").appendChild(newSVG);
-  };
-};
 
 async function getEurostatDataBasedOnIndicator(inidicator, time) {
   const data = await fetch(eurostatURL(inidicator, time));
@@ -151,6 +114,55 @@ const parseEurostatData = (data) => {
   return result;
 };
 
+//*
+//* FUNCTIONS FOR WORKING WITH DOM
+//*
+
+const initIndicatorSelect = (indicators) => {
+  const select = document.querySelector("#indicator-select");
+  Object.keys(indicators).forEach((indicator) => {
+    const option = document.createElement("option");
+    option.value = indicator;
+    option.innerText = indicators[indicator].name;
+    select.appendChild(option);
+  });
+  select.onchange = () => {
+    document.querySelector("#graph-container > svg")?.remove();
+  };
+};
+
+const initCountrySelect = (countries) => {
+  const select = document.querySelector("#country-select");
+  countries.forEach((country) => {
+    const option = document.createElement("option");
+    option.value = country;
+    option.innerText = country;
+    select.appendChild(option);
+  });
+  select.onchange = () => {
+    document.querySelector("#graph-container > svg")?.remove();
+  };
+};
+
+const initCreateChartButtonEventListener = () => {
+  document.querySelector("#create-chart-button").onclick = () => {
+    if (!parsedData) return alert("Datele nu au fost incarcate");
+    const indicatorSelect = document.querySelector("#indicator-select");
+    const countrySelect = document.querySelector("#country-select");
+    document.querySelector("#graph-container > svg")?.remove();
+    const newSVG = createSVG(
+      parsedData
+        .filter(
+          (data) =>
+            data.indicator === indicators[indicatorSelect.value].code &&
+            data.tara === countrySelect.value
+        )
+        .map((data) => ({ valoare: data.valoare, an: data.an }))
+    );
+    document.querySelector("#graph-container").appendChild(newSVG);
+  };
+};
+
 const createSVG = (data) => {
   const container = document.querySelector("#graph-container");
   const maxValue = Math.max(...data.map((obj) => obj.valoare));
@@ -183,38 +195,73 @@ const createSVG = (data) => {
     bar.setAttribute("fill", "red");
     svg.appendChild(bar);
 
-    const textYear = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "text"
-    );
-    textYear.setAttribute("class", "bar-text");
-    textYear.setAttribute("x", index * (barWidth + spacing) + barWidth / 6);
-    textYear.setAttribute("y", container.clientHeight - yOffset / 2);
-    textYear.textContent = obj.an;
-    svg.appendChild(textYear);
-
-    const textValue = document.createElementNS(
-      "http://www.w3.org/2000/svg",
-      "text"
-    );
-    textValue.setAttribute("class", "bar-text");
-    textValue.setAttribute("x", index * (barWidth + spacing) + barWidth / 6);
-    textValue.setAttribute(
-      "y",
-      container.clientHeight -
-        ((obj.valoare / maxValue) * container.clientHeight - yOffset)
-    );
-    textValue.textContent = obj.valoare;
-    svg.appendChild(textValue);
+    bar.onmousemove = (event) => {
+      const tooltip = document.querySelector("#tooltip");
+      tooltip.style.display = "block";
+      tooltip.style.top = `${event.clientY}px`;
+      tooltip.style.left = `${event.clientX}px`;
+      tooltip.textContent = `An: ${obj.an} - Valoare: ${obj.valoare}`;
+    };
+    bar.onmouseout = () => {
+      const tooltip = document.querySelector("#tooltip");
+      tooltip.style.display = "none";
+    };
   }
   return svg;
 };
 
+const initYearSelect = () => {
+  const select = document.querySelector("#year-select");
+  last15Years.forEach((year) => {
+    const option = document.createElement("option");
+    option.value = year;
+    option.innerText = year;
+    select.appendChild(option);
+  });
+};
+
+const drawBubbleChart = () => {
+  const canvas = document.querySelector("#bubble-chart");
+  const ctx = canvas.getContext("2d");
+
+  const minValue = Math.min(...parsedData.map((item) => item.valoare));
+  const maxValue = Math.max(...parsedData.map((item) => item.valoare));
+
+  parsedData.forEach((item) => {
+    const x = (parseInt(item.an) - 2000) * 100; // Adjust x position based on year
+    const y = canvas.height - item.valoare * 5; // Adjust y position based on value
+    const radius = mapValueToRadius(item.valoare, minValue, maxValue, 5, 30);
+
+    drawBubble(ctx, x, y, radius);
+  });
+};
+
+const drawBubble = (ctx, x, y, r) => {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, 2 * Math.PI);
+  ctx.fillStyle = "red";
+  ctx.fill();
+  ctx.stroke();
+};
+
+const mapValueToRadius = (value, minValue, maxValue, minRadius, maxRadius) => {
+  return (
+    ((value - minValue) / (maxValue - minValue)) * (maxRadius - minRadius) +
+    minRadius
+  );
+};
+
+//*
+//* MAIN
+//*
+
 document.addEventListener("DOMContentLoaded", async () => {
   initIndicatorSelect(indicators);
   initCountrySelect(countries);
-  initCreateChartButton();
+  initCreateChartButtonEventListener();
 
-  const rawData = await getRawEurostatData(indicators);
-  parsedData = parseEurostatData(rawData);
+  parsedData = parseEurostatData(await getRawEurostatData(indicators));
+
+  initYearSelect();
+  drawBubbleChart();
 });
