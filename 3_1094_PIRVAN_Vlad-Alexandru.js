@@ -148,7 +148,7 @@ const initCountrySelect = (COUNTRIES) => {
 
 const initCreateChartButtonEventListener = () => {
   document.querySelector("#create-chart-button").onclick = () => {
-    if (!PARSED_DATA) return alert("Datele nu au fost incarcate");
+    if (!PARSED_DATA) return alert("Datele nu au fost incarcate!");
     const indicatorSelect = document.querySelector("#indicator-select");
     const countrySelect = document.querySelector("#country-select");
     document.querySelector("#graph-container > svg")?.remove();
@@ -168,6 +168,7 @@ const createSVG = (data) => {
   const maxValue = Math.max(...data.map((obj) => obj.valoare));
   const barWidth = 50;
   const spacing = 10;
+  const xOffset = 30;
   const yOffset = 30;
 
   //container.style.width = `${(data.length - 1) * (barWidth + spacing)}px`;
@@ -175,13 +176,13 @@ const createSVG = (data) => {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
   svg.setAttribute("height", "100%");
-  svg.setAttribute("id", "svg-1");
 
   for (const [index, obj] of data.entries()) {
-    if (obj.valoare === -1) continue;
+    if (Number(obj.valoare) === -1) continue;
+
     const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     bar.setAttribute("class", "bar");
-    bar.setAttribute("x", index * (barWidth + spacing));
+    bar.setAttribute("x", index * (barWidth + spacing) + xOffset);
     bar.setAttribute(
       "y",
       container.clientHeight -
@@ -207,6 +208,7 @@ const createSVG = (data) => {
       tooltip.style.display = "none";
     };
   }
+
   return svg;
 };
 
@@ -232,7 +234,12 @@ const initBubbleChartYearSelect = () => {
 };
 
 const drawBubbleChart = (year, indicator) => {
+  const container = document.querySelector("#bubble-chart-container");
   const canvas = document.querySelector("#bubble-chart");
+
+  const middle = (canvas.scrollWidth - container.clientWidth) / 2;
+  container.scrollLeft = middle;
+
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -248,7 +255,7 @@ const drawBubbleChart = (year, indicator) => {
   ) {
     ctx.fillStyle = "black";
     ctx.textAlign = "center";
-    ctx.strokeText("Fara date", canvas.width / 2, canvas.height / 2);
+    ctx.strokeText("Nu exista date", canvas.width / 2, canvas.height / 2);
     return;
   }
 
@@ -364,7 +371,7 @@ const createTableData = (indicator, country, year, average) => {
     (item) =>
       item.tara === country &&
       item.indicator === INDICATORS[indicator].code &&
-      item.an === year &&
+      Number(item.an) === Number(year) &&
       Number(item.valoare) !== -1
   );
   if (data) {
