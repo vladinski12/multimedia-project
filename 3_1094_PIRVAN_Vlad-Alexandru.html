@@ -9,19 +9,31 @@
 </head>
 
 <body>
+
   <main>
-    <select id="indicator-select"></select>
-    <select id="country-select"></select>
-    <button id="create-chart-button">Create Chart</button>
-    <div id="tooltip"></div>
-    <div id="graph-container"></div>
-    <div id="bubble-chart-container">
-      <select id="year-select">Select Year</select>
-      <canvas id="bubble-chart">
+
+    <section id="svg-container">
+      <select id="indicator-select"></select>
+      <select id="country-select"></select>
+      <button id="create-chart-button">Create Chart</button>
+      <div id="tooltip"></div>
+      <div id="graph-container"></div>
+    </section>
+
+    <section id="bubble-chart-container">
+      <select id="year-select-bubble-chart">Select Year</select>
+      <canvas id="bubble-chart" width="1350" height="400">
       </canvas>
-    </div>
+    </section>
+
+    <section id="table-container">
+      <select id="year-select-table">Select Year</select>
+    </section>
+
   </main>
+
   <script src="./3_1094_PIRVAN_Vlad-Alexandru.js"></script>
+
 </body>
 
 </html>

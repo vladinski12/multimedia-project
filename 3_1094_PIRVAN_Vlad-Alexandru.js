@@ -2,9 +2,9 @@
 //* GLOBAL VARIABLES
 //*
 
-let parsedData;
+let PARSED_DATA;
 
-const indicators = {
+const INDICATORS = {
   gdp_per_capita: {
     name: "PIB pe cap de locuitor",
     datasetCode: "sdg_08_10?na_item=B1GQ&unit=CLV10_EUR_HAB",
@@ -22,7 +22,7 @@ const indicators = {
   },
 };
 
-const countries = [
+const COUNTRIES = [
   "BE",
   "BG",
   "CZ",
@@ -52,8 +52,10 @@ const countries = [
   "SE",
 ];
 
+const BUBBLE_CHART_INDICATOR = "PIB";
+
 //*
-//* FUNCTIONS FOR FETCHING DATA
+//* FUNCTIONS FOR WORKING WITH THE DATA
 //*
 
 const last15Years = [...Array(15).keys()].map(
@@ -61,27 +63,27 @@ const last15Years = [...Array(15).keys()].map(
 );
 
 const eurostatURL = (indicator, time) =>
-  `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${indicator}&time=${time}${countries
-    .map((country) => `&geo=${country}`)
-    .join("")}`;
+  `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/${indicator}&time=${time}${COUNTRIES.map(
+    (country) => `&geo=${country}`
+  ).join("")}`;
 
-async function getEurostatDataBasedOnIndicator(inidicator, time) {
-  const data = await fetch(eurostatURL(inidicator, time));
+async function getEurostatDataBasedOnIndicator(indicator, time) {
+  const data = await fetch(eurostatURL(indicator, time));
   const json = await data.json();
   return json;
 }
 
-async function getRawEurostatData(indicators) {
+async function getRawEurostatData(indicatorsToFetch) {
   const result = {
     gdp_per_capita: {},
     life_expectancy: {},
     population: {},
   };
   const promises = [];
-  for (const indicator of Object.keys(indicators)) {
+  for (const indicator of Object.keys(indicatorsToFetch)) {
     for (const year of last15Years) {
       promises.push(
-        getEurostatDataBasedOnIndicator(indicators[indicator].datasetCode, year)
+        getEurostatDataBasedOnIndicator(INDICATORS[indicator].datasetCode, year)
           .then((data) => {
             result[indicator][year] = data;
           })
@@ -105,7 +107,7 @@ const parseEurostatData = (data) => {
         result.push({
           tara: country,
           an: year,
-          indicator: indicators[indicator].code,
+          indicator: INDICATORS[indicator].code,
           valoare: data[indicator][year].value[index] ?? -1,
         });
       }
@@ -123,7 +125,7 @@ const initIndicatorSelect = (indicators) => {
   Object.keys(indicators).forEach((indicator) => {
     const option = document.createElement("option");
     option.value = indicator;
-    option.innerText = indicators[indicator].name;
+    option.innerText = INDICATORS[indicator].name;
     select.appendChild(option);
   });
   select.onchange = () => {
@@ -131,9 +133,9 @@ const initIndicatorSelect = (indicators) => {
   };
 };
 
-const initCountrySelect = (countries) => {
+const initCountrySelect = (COUNTRIES) => {
   const select = document.querySelector("#country-select");
-  countries.forEach((country) => {
+  COUNTRIES.forEach((country) => {
     const option = document.createElement("option");
     option.value = country;
     option.innerText = country;
@@ -146,18 +148,16 @@ const initCountrySelect = (countries) => {
 
 const initCreateChartButtonEventListener = () => {
   document.querySelector("#create-chart-button").onclick = () => {
-    if (!parsedData) return alert("Datele nu au fost incarcate");
+    if (!PARSED_DATA) return alert("Datele nu au fost incarcate");
     const indicatorSelect = document.querySelector("#indicator-select");
     const countrySelect = document.querySelector("#country-select");
     document.querySelector("#graph-container > svg")?.remove();
     const newSVG = createSVG(
-      parsedData
-        .filter(
-          (data) =>
-            data.indicator === indicators[indicatorSelect.value].code &&
-            data.tara === countrySelect.value
-        )
-        .map((data) => ({ valoare: data.valoare, an: data.an }))
+      PARSED_DATA.filter(
+        (data) =>
+          data.indicator === INDICATORS[indicatorSelect.value].code &&
+          data.tara === countrySelect.value
+      ).map((data) => ({ valoare: data.valoare, an: data.an }))
     );
     document.querySelector("#graph-container").appendChild(newSVG);
   };
@@ -210,8 +210,7 @@ const createSVG = (data) => {
   return svg;
 };
 
-const initYearSelect = () => {
-  const select = document.querySelector("#year-select");
+const initYearSelect = (select) => {
   last15Years.forEach((year) => {
     const option = document.createElement("option");
     option.value = year;
@@ -220,35 +219,184 @@ const initYearSelect = () => {
   });
 };
 
-const drawBubbleChart = () => {
+//*
+//* BUBBLE CHART
+//*
+
+const initBubbleChartYearSelect = () => {
+  const select = document.querySelector("#year-select-bubble-chart");
+  initYearSelect(select);
+  select.onchange = () => {
+    drawBubbleChart(select.value, BUBBLE_CHART_INDICATOR);
+  };
+};
+
+const drawBubbleChart = (year, indicator) => {
   const canvas = document.querySelector("#bubble-chart");
   const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const minValue = Math.min(...parsedData.map((item) => item.valoare));
-  const maxValue = Math.max(...parsedData.map((item) => item.valoare));
+  const filteredData = PARSED_DATA.filter(
+    (item) => item.indicator === indicator && Number(item.an) === Number(year)
+  );
 
-  parsedData.forEach((item) => {
-    const x = (parseInt(item.an) - 2000) * 100; // Adjust x position based on year
-    const y = canvas.height - item.valoare * 5; // Adjust y position based on value
-    const radius = mapValueToRadius(item.valoare, minValue, maxValue, 5, 30);
+  canvas.width = filteredData.length * 50;
 
-    drawBubble(ctx, x, y, radius);
+  if (
+    filteredData.filter((item) => Number(item.valoare) === -1).length ===
+    filteredData.length
+  ) {
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.strokeText("Fara date", canvas.width / 2, canvas.height / 2);
+    return;
+  }
+
+  const minValue = Math.min(
+    ...PARSED_DATA.filter(
+      (item) => item.indicator === indicator && Number(item.valoare) !== -1
+    ).map((item) => item.valoare)
+  );
+
+  const maxValue = Math.max(
+    ...PARSED_DATA.filter(
+      (item) => item.indicator === indicator && Number(item.valoare) !== -1
+    ).map((item) => item.valoare)
+  );
+
+  const spread = 50;
+  const scalingFactor = Math.abs(minValue / maxValue);
+
+  filteredData.forEach((item, index) => {
+    const x = index * spread + spread / 2;
+    const y = canvas.height - (item.valoare / maxValue) * canvas.height;
+    const radius = Math.sqrt(Number(item.valoare)) * scalingFactor;
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, 2 * Math.PI);
+    ctx.fillStyle = randomColor();
+    ctx.fill();
+    ctx.stroke();
+    ctx.closePath();
+
+    ctx.fillStyle = "black";
+    ctx.textAlign = "center";
+    ctx.fillText(item.tara, x, canvas.height - 10);
   });
 };
 
-const drawBubble = (ctx, x, y, r) => {
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, 2 * Math.PI);
-  ctx.fillStyle = "red";
-  ctx.fill();
-  ctx.stroke();
+const randomColor = () => {
+  const letters = "0123456789ABCDEF";
+  let color = "#";
+  for (let i = 0; i < 3; i++) {
+    color += letters[Math.floor(Math.random() * 16)];
+  }
+  return color;
 };
 
-const mapValueToRadius = (value, minValue, maxValue, minRadius, maxRadius) => {
-  return (
-    ((value - minValue) / (maxValue - minValue)) * (maxRadius - minRadius) +
-    minRadius
+//*
+//* TABLE
+//*
+
+const initTableYearSelect = () => {
+  const select = document.querySelector("#year-select-table");
+  initYearSelect(select);
+  select.onchange = () => {
+    drawTable(select.value);
+  };
+};
+
+const drawTable = (year) => {
+  const container = document.querySelector("#table-container");
+  container.querySelector("table")?.remove();
+
+  const table = document.createElement("table");
+  table.classList.add("table"); //TODO
+
+  initTableHeader(table);
+
+  initRowData(year, table);
+  container.appendChild(table);
+};
+
+const initTableHeader = (table) => {
+  const rowHeader = document.createElement("tr");
+  const countryHeader = document.createElement("th");
+  countryHeader.textContent = "Tara";
+  rowHeader.appendChild(countryHeader);
+  for (const indicator of Object.keys(INDICATORS)) {
+    const header = document.createElement("th");
+    header.textContent = INDICATORS[indicator].name;
+    rowHeader.appendChild(header);
+  }
+  table.appendChild(rowHeader);
+};
+
+const initRowData = (year, table) => {
+  for (const country of COUNTRIES) {
+    const row = document.createElement("tr");
+
+    const countryTD = document.createElement("td");
+    countryTD.textContent = country;
+    row.appendChild(countryTD);
+
+    for (let indicator of Object.keys(INDICATORS)) {
+      // const average = Math.avg(
+      //   ...PARSED_DATA.filter(
+      //     (item) =>
+      //       item.indicator === INDICATORS[indicator].code &&
+      //       Number(item.an) === Number(year) &&
+      //       Number(item.valoare) !== -1
+      //   ).map((item) => item.valoare)
+      // );
+
+      const filteredData = PARSED_DATA.filter(
+        (item) =>
+          item.indicator === INDICATORS[indicator].code &&
+          Number(item.an) === Number(year) &&
+          Number(item.valoare) !== -1
+      );
+
+      const average =
+        filteredData.map((item) => item.valoare).reduce((a, b) => a + b, 0) /
+        filteredData.length;
+
+      row.appendChild(createTableData(indicator, country, year, average));
+    }
+
+    table.appendChild(row);
+  }
+};
+
+const createTableData = (indicator, country, year, average) => {
+  const td = document.createElement("td");
+  const data = PARSED_DATA.find(
+    (item) =>
+      item.tara === country &&
+      item.indicator === INDICATORS[indicator].code &&
+      item.an === year &&
+      Number(item.valoare) !== -1
   );
+  if (data) {
+    td.textContent = data.valoare;
+    td.style.backgroundColor = valueToRGB(Number(data.valoare), average);
+  } else {
+    td.textContent = "N/A";
+  }
+  return td;
+};
+
+const valueToRGB = (value, average) => {
+  const distance = Math.abs(value - average);
+  const normalizedValue = distance / (average * 2);
+
+  const green = Math.floor((1 - normalizedValue) * 255);
+  const red = Math.floor(normalizedValue * 255);
+
+  const clampedGreen = Math.min(255, Math.max(0, green));
+  const clampedRed = Math.min(255, Math.max(0, red));
+
+  return `rgb(${clampedRed}, ${clampedGreen}, 0)`;
 };
 
 //*
@@ -256,12 +404,16 @@ const mapValueToRadius = (value, minValue, maxValue, minRadius, maxRadius) => {
 //*
 
 document.addEventListener("DOMContentLoaded", async () => {
-  initIndicatorSelect(indicators);
-  initCountrySelect(countries);
+  initIndicatorSelect(INDICATORS);
+  initCountrySelect(COUNTRIES);
   initCreateChartButtonEventListener();
 
-  parsedData = parseEurostatData(await getRawEurostatData(indicators));
+  initBubbleChartYearSelect();
+  initTableYearSelect();
 
-  initYearSelect();
-  drawBubbleChart();
+  const rawData = await getRawEurostatData(INDICATORS);
+  PARSED_DATA = parseEurostatData(rawData);
+
+  drawBubbleChart(new Date().getFullYear(), BUBBLE_CHART_INDICATOR);
+  drawTable(new Date().getFullYear());
 });
