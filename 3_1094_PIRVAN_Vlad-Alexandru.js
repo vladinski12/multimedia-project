@@ -311,7 +311,6 @@ const drawTable = (year) => {
   container.querySelector("table")?.remove();
 
   const table = document.createElement("table");
-  table.classList.add("table"); //TODO
 
   initTableHeader(table);
 
@@ -341,15 +340,6 @@ const initRowData = (year, table) => {
     row.appendChild(countryTD);
 
     for (let indicator of Object.keys(INDICATORS)) {
-      // const average = Math.avg(
-      //   ...PARSED_DATA.filter(
-      //     (item) =>
-      //       item.indicator === INDICATORS[indicator].code &&
-      //       Number(item.an) === Number(year) &&
-      //       Number(item.valoare) !== -1
-      //   ).map((item) => item.valoare)
-      // );
-
       const filteredData = PARSED_DATA.filter(
         (item) =>
           item.indicator === INDICATORS[indicator].code &&
