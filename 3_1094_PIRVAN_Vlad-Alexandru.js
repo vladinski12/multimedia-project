@@ -4,6 +4,11 @@
 
 let PARSED_DATA;
 
+// X axis GDP
+// Y axis Life expectancy
+// Bubble size population
+// Color Country
+
 const INDICATORS = {
   gdp_per_capita: {
     name: "PIB pe cap de locuitor",
