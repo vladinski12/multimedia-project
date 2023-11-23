@@ -52,7 +52,9 @@ const COUNTRIES = [
   "SE",
 ];
 
-const BUBBLE_CHART_INDICATOR = "PIB";
+const BUBBLE_CHART_X_AXIS = "PIB";
+const BUBBLE_CHART_Y_AXIS = "SV";
+const BUBBLE_CHART_BUBBLE_SIZE = "POP";
 
 //*
 //* FUNCTIONS FOR WORKING WITH THE DATA
@@ -120,7 +122,7 @@ const parseEurostatData = (data) => {
 //* FUNCTIONS FOR WORKING WITH DOM
 //*
 
-const initIndicatorSelect = (indicators) => {
+const initializeIndicatorSelect = (indicators) => {
   const select = document.querySelector("#indicator-select");
   Object.keys(indicators).forEach((indicator) => {
     const option = document.createElement("option");
@@ -133,7 +135,7 @@ const initIndicatorSelect = (indicators) => {
   };
 };
 
-const initCountrySelect = (COUNTRIES) => {
+const initializeCountrySelect = (COUNTRIES) => {
   const select = document.querySelector("#country-select");
   COUNTRIES.forEach((country) => {
     const option = document.createElement("option");
@@ -146,7 +148,7 @@ const initCountrySelect = (COUNTRIES) => {
   };
 };
 
-const initCreateChartButtonEventListener = () => {
+const initializeCreateChartButtonEventListener = () => {
   document.querySelector("#create-chart-button").onclick = () => {
     if (!PARSED_DATA) return alert("Datele nu au fost incarcate");
     const indicatorSelect = document.querySelector("#indicator-select");
@@ -169,8 +171,6 @@ const createSVG = (data) => {
   const barWidth = 50;
   const spacing = 10;
   const yOffset = 30;
-
-  //container.style.width = `${(data.length - 1) * (barWidth + spacing)}px`;
 
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.setAttribute("width", "100%");
@@ -210,7 +210,7 @@ const createSVG = (data) => {
   return svg;
 };
 
-const initYearSelect = (select) => {
+const initializeYearSelect = (select) => {
   last15Years.forEach((year) => {
     const option = document.createElement("option");
     option.value = year;
@@ -223,35 +223,7 @@ const initYearSelect = (select) => {
 //* BUBBLE CHART
 //*
 
-const initBubbleChartYearSelect = () => {
-  const select = document.querySelector("#year-select-bubble-chart");
-  initYearSelect(select);
-  select.onchange = () => {
-    drawBubbleChart(select.value, BUBBLE_CHART_INDICATOR);
-  };
-};
-
-const drawBubbleChart = (year, indicator) => {
-  const canvas = document.querySelector("#bubble-chart");
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const filteredData = PARSED_DATA.filter(
-    (item) => item.indicator === indicator && Number(item.an) === Number(year)
-  );
-
-  canvas.width = filteredData.length * 50;
-
-  if (
-    filteredData.filter((item) => Number(item.valoare) === -1).length ===
-    filteredData.length
-  ) {
-    ctx.fillStyle = "black";
-    ctx.textAlign = "center";
-    ctx.strokeText("Fara date", canvas.width / 2, canvas.height / 2);
-    return;
-  }
-
+const returnMinMaxValuesBasedOnIndicator = (indicator) => {
   const minValue = Math.min(
     ...PARSED_DATA.filter(
       (item) => item.indicator === indicator && Number(item.valoare) !== -1
@@ -264,25 +236,91 @@ const drawBubbleChart = (year, indicator) => {
     ).map((item) => item.valoare)
   );
 
-  const spread = 50;
-  const scalingFactor = Math.abs(minValue / maxValue);
+  return [minValue, maxValue];
+};
 
-  filteredData.forEach((item, index) => {
-    const x = index * spread + spread / 2;
-    const y = canvas.height - (item.valoare / maxValue) * canvas.height;
-    const radius = Math.sqrt(Number(item.valoare)) * scalingFactor;
+const initializeBubbleChartYearSelect = () => {
+  const select = document.querySelector("#year-select-bubble-chart");
+  initializeYearSelect(select);
+  select.onchange = () => {
+    drawBubbleChart(select.value);
+  };
+};
 
-    ctx.beginPath();
-    ctx.arc(x, y, radius, 0, 2 * Math.PI);
-    ctx.fillStyle = randomColor();
-    ctx.fill();
-    ctx.stroke();
-    ctx.closePath();
+const drawBubbleChart = (year) => {
+  const canvas = document.querySelector("#bubble-chart");
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  const xOffset = 50;
+  const yOffset = 50;
+
+  const filteredData = PARSED_DATA.filter(
+    (item) => Number(item.an) === Number(year)
+  );
+
+  if (filteredData.some((item) => Number(item.valoare) === -1)) {
     ctx.fillStyle = "black";
     ctx.textAlign = "center";
-    ctx.fillText(item.tara, x, canvas.height - 10);
-  });
+    ctx.strokeText("Fara date", canvas.width / 2, canvas.height / 2);
+    return;
+  }
+  const [minValueX, maxValueX] =
+    returnMinMaxValuesBasedOnIndicator(BUBBLE_CHART_X_AXIS);
+  const [minValueY, maxValueY] =
+    returnMinMaxValuesBasedOnIndicator(BUBBLE_CHART_Y_AXIS);
+  const [minValueBubbleSize, maxValueBubbleSize] =
+    returnMinMaxValuesBasedOnIndicator(BUBBLE_CHART_BUBBLE_SIZE);
+
+  const scalingFactor = Math.abs(minValueBubbleSize / maxValueBubbleSize);
+
+  filteredData
+    .filter((item) => item.indicator === BUBBLE_CHART_BUBBLE_SIZE)
+    .forEach((data) => {
+      const xAxisValue = filteredData.find(
+        (item) =>
+          item.indicator === BUBBLE_CHART_X_AXIS && item.tara === data.tara
+      ).valoare;
+      const x =
+        xOffset +
+        ((xAxisValue - minValueX) / (maxValueX - minValueX)) * canvas.width;
+
+      const yAxisValue = filteredData.find(
+        (item) =>
+          item.indicator === BUBBLE_CHART_Y_AXIS && item.tara === data.tara
+      ).valoare;
+      const y =
+        ((yAxisValue - minValueY) / (maxValueY - minValueY)) * canvas.height -
+        yOffset;
+
+      const radius = Math.sqrt(Number(data.valoare)) * scalingFactor;
+
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, 2 * Math.PI);
+      const color = randomColor();
+      ctx.fillStyle = randomColor();
+      updateLegend(data.tara, color);
+      ctx.fill();
+      ctx.stroke();
+      ctx.closePath();
+
+      ctx.fillStyle = "black";
+      ctx.textAlign = "center";
+      ctx.fillText(xAxisValue, x, canvas.height - 10);
+      ctx.fillText(yAxisValue, 10, y);
+    });
+};
+
+const updateLegend = (country, color) => {
+  const tableBody = document.querySelector("#bubble-chart-legend > tbody");
+  const row = document.createElement("tr");
+  const countryCell = document.createElement("td");
+  countryCell.textContent = country;
+  const colorCell = document.createElement("td");
+  colorCell.style.backgroundColor = color;
+  row.appendChild(countryCell);
+  row.appendChild(colorCell);
+  tableBody.appendChild(row);
 };
 
 const randomColor = () => {
@@ -294,13 +332,35 @@ const randomColor = () => {
   return color;
 };
 
+const animateBubbleChart = (startYear, endYear) => {
+  let currentYear = startYear;
+  let currentFrame = 0;
+  const animationDuration = 1000; // in milliseconds
+  const framesPerSecond = 60;
+  const frameDuration = 1000 / framesPerSecond;
+  const totalFrames = Math.ceil((endYear - startYear) * framesPerSecond);
+
+  const drawFrame = () => {
+    const progress = currentFrame / totalFrames;
+    drawBubbleChart(Math.round(startYear + progress * (endYear - startYear)));
+    currentYear += 1 / framesPerSecond;
+    currentFrame += 1;
+
+    if (currentFrame < totalFrames) {
+      requestAnimationFrame(drawFrame);
+    }
+  };
+
+  requestAnimationFrame(drawFrame);
+};
+
 //*
 //* TABLE
 //*
 
-const initTableYearSelect = () => {
+const initializeTableYearSelect = () => {
   const select = document.querySelector("#year-select-table");
-  initYearSelect(select);
+  initializeYearSelect(select);
   select.onchange = () => {
     drawTable(select.value);
   };
@@ -312,13 +372,13 @@ const drawTable = (year) => {
 
   const table = document.createElement("table");
 
-  initTableHeader(table);
+  initializeTableHeader(table);
 
-  initRowData(year, table);
+  initializeRowData(year, table);
   container.appendChild(table);
 };
 
-const initTableHeader = (table) => {
+const initializeTableHeader = (table) => {
   const rowHeader = document.createElement("tr");
   const countryHeader = document.createElement("th");
   countryHeader.textContent = "Tara";
@@ -331,7 +391,7 @@ const initTableHeader = (table) => {
   table.appendChild(rowHeader);
 };
 
-const initRowData = (year, table) => {
+const initializeRowData = (year, table) => {
   for (const country of COUNTRIES) {
     const row = document.createElement("tr");
 
@@ -394,16 +454,23 @@ const valueToRGB = (value, average) => {
 //*
 
 document.addEventListener("DOMContentLoaded", async () => {
-  initIndicatorSelect(INDICATORS);
-  initCountrySelect(COUNTRIES);
-  initCreateChartButtonEventListener();
+  initializeIndicatorSelect(INDICATORS);
+  initializeCountrySelect(COUNTRIES);
+  initializeCreateChartButtonEventListener();
 
-  initBubbleChartYearSelect();
-  initTableYearSelect();
+  initializeBubbleChartYearSelect();
+  initializeTableYearSelect();
 
-  const rawData = await getRawEurostatData(INDICATORS);
-  PARSED_DATA = parseEurostatData(rawData);
+  if (localStorage.getItem("eurostat-data")) {
+    PARSED_DATA = JSON.parse(localStorage.getItem("eurostat-data"));
+  } else {
+    const rawData = await getRawEurostatData(INDICATORS);
+    PARSED_DATA = parseEurostatData(rawData);
+    localStorage.setItem("eurostat-data", JSON.stringify(PARSED_DATA));
+  }
 
-  drawBubbleChart(new Date().getFullYear(), BUBBLE_CHART_INDICATOR);
+  drawBubbleChart(new Date().getFullYear());
   drawTable(new Date().getFullYear());
+
+  animateBubbleChart(2000, 2010);
 });
