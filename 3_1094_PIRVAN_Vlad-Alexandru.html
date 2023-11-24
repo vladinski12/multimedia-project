@@ -4,14 +4,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/x-icon" href="./media/icons8-html-5-16.png" />
   <link href="./3_1094_PIRVAN_Vlad-Alexandru.css" rel="stylesheet" />
-  <title>Vizualizare date</title>
+  <title>3_1094_PIRVAN_Vlad-Alexandru</title>
 </head>
 
 <body>
 
   <main>
-
+    <!-- SVG -->
     <section id="svg-container">
       <select id="indicator-select"></select>
       <select id="country-select"></select>
@@ -19,11 +20,16 @@
       <div id="tooltip"></div>
       <div id="graph-container"></div>
     </section>
-
+    <!-- SVG -->
+    <!-- CANVAS -->
     <section id="bubble-chart-container">
-      <select id="year-select-bubble-chart">Select Year</select>
+      <span>
+        <select id="year-bubble-chart-select">Select Year</select>
+        <button id="trigger-animation-bubble-chart-button">Trigger Animation</button>
+      </span>
       <canvas id="bubble-chart" width="1350" height="400"></canvas>
       <table id="bubble-chart-legend">
+        <caption>Legend</caption>
         <thead>
           <tr>
             <th>Country</th>
@@ -33,11 +39,12 @@
         <tbody></tbody>
       </table>
     </section>
-
+    <!-- CANVAS -->
+    <!-- TABLE -->
     <section id="table-container">
-      <select id="year-select-table">Select Year</select>
+      <select id="year-table-select">Select Year</select>
     </section>
-
+    <!-- TABLE -->
   </main>
 
   <script src="./3_1094_PIRVAN_Vlad-Alexandru.js"></script>

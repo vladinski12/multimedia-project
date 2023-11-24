@@ -56,12 +56,15 @@ const BUBBLE_CHART_X_AXIS = "PIB";
 const BUBBLE_CHART_Y_AXIS = "SV";
 const BUBBLE_CHART_BUBBLE_SIZE = "POP";
 
+const CURRENT_YEAR = new Date().getFullYear();
+const NUMBER_OF_YEARS = 15;
+
 //*
 //* FUNCTIONS FOR WORKING WITH THE DATA
 //*
 
-const last15Years = [...Array(15).keys()].map(
-  (year) => new Date().getFullYear() - year
+const lastNumberOfYears = [...Array(NUMBER_OF_YEARS).keys()].map(
+  (year) => CURRENT_YEAR - year
 );
 
 const eurostatURL = (indicator, time) =>
@@ -69,13 +72,11 @@ const eurostatURL = (indicator, time) =>
     (country) => `&geo=${country}`
   ).join("")}`;
 
-async function getEurostatDataBasedOnIndicator(indicator, time) {
-  const data = await fetch(eurostatURL(indicator, time));
-  const json = await data.json();
-  return json;
-}
+const getEurostatDataBasedOnIndicator = async (indicator, time) => {
+  return (await fetch(eurostatURL(indicator, time))).json();
+};
 
-async function getRawEurostatData(indicatorsToFetch) {
+const getRawEurostatData = async (indicatorsToFetch) => {
   const result = {
     gdp_per_capita: {},
     life_expectancy: {},
@@ -83,7 +84,7 @@ async function getRawEurostatData(indicatorsToFetch) {
   };
   const promises = [];
   for (const indicator of Object.keys(indicatorsToFetch)) {
-    for (const year of last15Years) {
+    for (const year of lastNumberOfYears) {
       promises.push(
         getEurostatDataBasedOnIndicator(INDICATORS[indicator].datasetCode, year)
           .then((data) => {
@@ -97,7 +98,7 @@ async function getRawEurostatData(indicatorsToFetch) {
   }
   await Promise.all(promises);
   return result;
-}
+};
 
 const parseEurostatData = (data) => {
   const result = [];
@@ -211,7 +212,7 @@ const createSVG = (data) => {
 };
 
 const initializeYearSelect = (select) => {
-  last15Years.forEach((year) => {
+  lastNumberOfYears.forEach((year) => {
     const option = document.createElement("option");
     option.value = year;
     option.innerText = year;
@@ -239,15 +240,24 @@ const returnMinMaxValuesBasedOnIndicator = (indicator) => {
   return [minValue, maxValue];
 };
 
+const initializeBubbleChartTriggerAnimationButton = () => {
+  const button = document.querySelector(
+    "#trigger-animation-bubble-chart-button"
+  );
+  button.onclick = () => {
+    animateBubbleChart(CURRENT_YEAR - NUMBER_OF_YEARS, CURRENT_YEAR);
+  };
+};
+
 const initializeBubbleChartYearSelect = () => {
-  const select = document.querySelector("#year-select-bubble-chart");
+  const select = document.querySelector("#year-bubble-chart-select");
   initializeYearSelect(select);
   select.onchange = () => {
     drawBubbleChart(select.value);
   };
 };
 
-const drawBubbleChart = (year) => {
+const drawBubbleChart = (year, withLegend = true) => {
   const canvas = document.querySelector("#bubble-chart");
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -258,6 +268,8 @@ const drawBubbleChart = (year) => {
   const filteredData = PARSED_DATA.filter(
     (item) => Number(item.an) === Number(year)
   );
+
+  deleteLegend();
 
   if (filteredData.some((item) => Number(item.valoare) === -1)) {
     ctx.fillStyle = "black";
@@ -299,7 +311,7 @@ const drawBubbleChart = (year) => {
       ctx.arc(x, y, radius, 0, 2 * Math.PI);
       const color = randomColor();
       ctx.fillStyle = randomColor();
-      updateLegend(data.tara, color);
+      if (withLegend) insertLegend(data.tara, color);
       ctx.fill();
       ctx.stroke();
       ctx.closePath();
@@ -311,7 +323,12 @@ const drawBubbleChart = (year) => {
     });
 };
 
-const updateLegend = (country, color) => {
+const deleteLegend = () => {
+  const tableBody = document.querySelector("#bubble-chart-legend > tbody");
+  tableBody.innerHTML = "";
+};
+
+const insertLegend = (country, color) => {
   const tableBody = document.querySelector("#bubble-chart-legend > tbody");
   const row = document.createElement("tr");
   const countryCell = document.createElement("td");
@@ -333,25 +350,31 @@ const randomColor = () => {
 };
 
 const animateBubbleChart = (startYear, endYear) => {
+  const select = document.querySelector("#year-bubble-chart-select");
+  select.disabled = true;
   let currentYear = startYear;
+
   let currentFrame = 0;
-  const animationDuration = 1000; // in milliseconds
   const framesPerSecond = 60;
-  const frameDuration = 1000 / framesPerSecond;
   const totalFrames = Math.ceil((endYear - startYear) * framesPerSecond);
 
   const drawFrame = () => {
     const progress = currentFrame / totalFrames;
-    drawBubbleChart(Math.round(startYear + progress * (endYear - startYear)));
+    drawBubbleChart(
+      Math.round(startYear + progress * (endYear - startYear)),
+      false
+    );
     currentYear += 1 / framesPerSecond;
     currentFrame += 1;
-
     if (currentFrame < totalFrames) {
       requestAnimationFrame(drawFrame);
     }
   };
-
   requestAnimationFrame(drawFrame);
+  setTimeout(() => {
+    select.disabled = false;
+    drawBubbleChart(endYear);
+  }, (endYear - startYear) * 1000);
 };
 
 //*
@@ -359,7 +382,7 @@ const animateBubbleChart = (startYear, endYear) => {
 //*
 
 const initializeTableYearSelect = () => {
-  const select = document.querySelector("#year-select-table");
+  const select = document.querySelector("#year-table-select");
   initializeYearSelect(select);
   select.onchange = () => {
     drawTable(select.value);
@@ -459,6 +482,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   initializeCreateChartButtonEventListener();
 
   initializeBubbleChartYearSelect();
+  initializeBubbleChartTriggerAnimationButton();
+
   initializeTableYearSelect();
 
   if (localStorage.getItem("eurostat-data")) {
@@ -469,8 +494,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     localStorage.setItem("eurostat-data", JSON.stringify(PARSED_DATA));
   }
 
-  drawBubbleChart(new Date().getFullYear());
-  drawTable(new Date().getFullYear());
-
-  animateBubbleChart(2000, 2010);
+  drawBubbleChart(CURRENT_YEAR);
+  drawTable(CURRENT_YEAR);
 });
