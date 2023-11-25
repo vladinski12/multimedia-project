@@ -1,6 +1,24 @@
-* {
-  border: 1px solid red;
+/* BODY */
+
+body {
+  background: rgb(236, 244, 214);
+  background: linear-gradient(
+    90deg,
+    rgba(236, 244, 214, 1) 0%,
+    rgba(45, 149, 150, 1) 50%,
+    rgba(38, 80, 115, 1) 100%
+  );
 }
+
+body * {
+  padding: 0.5rem;
+
+  color: black;
+  font: 1rem "Verdana", Times, serif;
+  font-weight: 600;
+}
+
+/* MAIN */
 
 main {
   display: flex;
@@ -11,6 +29,10 @@ main {
 
 main * {
   margin: 1rem 1rem;
+
+  border: 1px solid white;
+  border-radius: 5px;
+  box-shadow: rgba(0, 0, 0, 0.5) 0px 5px 2px;
 }
 
 main > section {
@@ -20,27 +42,41 @@ main > section {
   align-items: center;
 }
 
-svg {
-  margin: 0 0;
-}
+/* SVG */
 
 #graph-container {
   height: 20rem;
   width: 56.25rem;
   margin: 2rem 2rem;
-  border: 1px solid black;
+}
+
+svg {
+  margin: 0 0;
+
+  border: none;
+  border-radius: none;
+  box-shadow: none;
 }
 
 #tooltip {
+  padding: 5px;
+
   position: absolute;
   display: none;
   background: cornsilk;
-  border: 1px solid black;
   border-radius: 5px;
-  padding: 5px;
 }
+
+/* BUBBLE CHART */
 
 #bubble-chart {
   margin: 2rem 2rem;
-  border: 1px solid black;
+}
+
+/* TABLE */
+
+table {
+  border: none;
+  border-radius: none;
+  box-shadow: none;
 }

@@ -193,7 +193,7 @@ const createSVG = (data) => {
       "height",
       (obj.valoare / maxValue) * (container.clientHeight - yOffset)
     );
-    bar.setAttribute("fill", "red");
+    bar.setAttribute("fill", "darkblue");
     svg.appendChild(bar);
 
     bar.onmousemove = (event) => {
@@ -373,6 +373,7 @@ const animateBubbleChart = (startYear, endYear) => {
   requestAnimationFrame(drawFrame);
   setTimeout(() => {
     select.disabled = false;
+    select.value = endYear;
     drawBubbleChart(endYear);
   }, (endYear - startYear) * 1000);
 };
@@ -489,8 +490,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (localStorage.getItem("eurostat-data")) {
     PARSED_DATA = JSON.parse(localStorage.getItem("eurostat-data"));
   } else {
-    const rawData = await getRawEurostatData(INDICATORS);
-    PARSED_DATA = parseEurostatData(rawData);
+    PARSED_DATA = parseEurostatData(await getRawEurostatData(INDICATORS));
     localStorage.setItem("eurostat-data", JSON.stringify(PARSED_DATA));
   }
 
