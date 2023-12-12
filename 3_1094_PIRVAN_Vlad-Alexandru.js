@@ -11,12 +11,12 @@ const INDICATORS = {
     code: "PIB",
   },
   life_expectancy: {
-    name: "Speranta de viata",
+    name: "Speranță de viată",
     datasetCode: "demo_mlexpec?sex=T&age=Y1",
     code: "SV",
   },
   population: {
-    name: "Populatie",
+    name: "Populație",
     datasetCode: "demo_pjan?sex=T&age=TOTAL",
     code: "POP",
   },
@@ -151,7 +151,7 @@ const initializeCountrySelect = (COUNTRIES) => {
 
 const initializeCreateChartButtonEventListener = () => {
   document.querySelector("#create-chart-button").onclick = () => {
-    if (!PARSED_DATA) return alert("Datele nu au fost incarcate");
+    if (!PARSED_DATA) return alert("Datele nu au fost încarcate");
     const indicatorSelect = document.querySelector("#indicator-select");
     const countrySelect = document.querySelector("#country-select");
     document.querySelector("#graph-container > svg")?.remove();
@@ -274,7 +274,7 @@ const drawBubbleChart = (year, withLegend = true) => {
   if (filteredData.some((item) => Number(item.valoare) === -1)) {
     ctx.fillStyle = "black";
     ctx.textAlign = "center";
-    ctx.strokeText("Fara date", canvas.width / 2, canvas.height / 2);
+    ctx.strokeText("Fară date", canvas.width / 2, canvas.height / 2);
     return;
   }
   const [minValueX, maxValueX] =
@@ -302,8 +302,9 @@ const drawBubbleChart = (year, withLegend = true) => {
           item.indicator === BUBBLE_CHART_Y_AXIS && item.tara === data.tara
       ).valoare;
       const y =
-        ((yAxisValue - minValueY) / (maxValueY - minValueY)) * canvas.height -
-        yOffset;
+        canvas.height +
+        yOffset -
+        ((yAxisValue - minValueY) / (maxValueY - minValueY)) * canvas.height;
 
       const radius = Math.sqrt(Number(data.valoare)) * scalingFactor;
 
@@ -355,8 +356,9 @@ const animateBubbleChart = (startYear, endYear) => {
   let currentYear = startYear;
 
   let currentFrame = 0;
-  const framesPerSecond = 60;
+  const framesPerSecond = 1;
   const totalFrames = Math.ceil((endYear - startYear) * framesPerSecond);
+  const duration = 500;
 
   const drawFrame = () => {
     const progress = currentFrame / totalFrames;
@@ -364,18 +366,24 @@ const animateBubbleChart = (startYear, endYear) => {
       Math.round(startYear + progress * (endYear - startYear)),
       false
     );
+
     currentYear += 1 / framesPerSecond;
     currentFrame += 1;
     if (currentFrame < totalFrames) {
-      requestAnimationFrame(drawFrame);
+      setTimeout(() => {
+        requestAnimationFrame(drawFrame);
+      }, duration);
     }
   };
+
   requestAnimationFrame(drawFrame);
+
   setTimeout(() => {
+    document.querySelector("#bubble-chart").style.opacity = 1;
     select.disabled = false;
     select.value = endYear;
     drawBubbleChart(endYear);
-  }, (endYear - startYear) * 1000);
+  }, totalFrames * fadeDuration);
 };
 
 //*
