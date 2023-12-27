@@ -12,7 +12,6 @@ body {
 
 body * {
   padding: 0.5rem;
-
   color: black;
   font: 1rem "Verdana", Times, serif;
   font-weight: 600;
@@ -52,7 +51,6 @@ main > section {
 
 svg {
   margin: 0 0;
-
   border: none;
   border-radius: none;
   box-shadow: none;
@@ -60,7 +58,6 @@ svg {
 
 #tooltip {
   padding: 5px;
-
   position: absolute;
   display: none;
   background: cornsilk;

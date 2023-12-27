@@ -383,7 +383,7 @@ const animateBubbleChart = (startYear, endYear) => {
     select.disabled = false;
     select.value = endYear;
     drawBubbleChart(endYear);
-  }, totalFrames * fadeDuration);
+  }, totalFrames * duration);
 };
 
 //*
