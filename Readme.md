@@ -52,7 +52,3 @@ Alternatively, you can double-click the HTML file to open it in your default bro
 ## 📊 Data Source
 
 The application utilizes publicly available datasets detailing GDP per capita, life expectancy, and population statistics for EU countries from 2000 to 2018.
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
