@@ -1,21 +1,58 @@
-# Aplicatie HTML + CSS + JS pentru vizualizare date
+# 📊 EU Indicators Visualization App
 
-## Descriere:
-  Aplicatie pentru vizualizarea unui set de date. Setul de date care cuprinde informații
-despre indicatorii PIB pe cap de locuitor, Speranță de Viață și Populație pentru țările Uniunii Europene în perioada
-2000-2018.
+An interactive web application for visualizing key socio-economic indicators—GDP per capita, life expectancy, and population—across European Union countries from 2000 to 2018.
 
-- preluare automată la pornirea aplicației a datelor curente despre PIB pe cap de locuitor/ Speranta Viata /
-Populatie pentru țările UE pentru ultimii 15 ani disponibili.
+## 🧩 Features
 
-- afișare grafică evoluție pentru un indicator (PIB/SV/Pop) și o țară selectată de către utilizator - element de tip SVG (grafică vectorială)
+* **Automatic Data Loading**: On startup, the app fetches the latest available data for EU countries covering the last 15 years.
+* **Interactive Charts**: Select a country and an indicator (GDP per capita, life expectancy, or population) to view its evolution over time.
+* **SVG-Based Graphs**: Data is displayed using scalable vector graphics for clarity and responsiveness.
+* **Tooltips**: Hover over data points to see detailed information, including the specific year and value.
 
-- pentru graficul de la punctul anterior, tooltip care să afișeze anul și valorile pentru PIB/SV/Pop pentru perioada corespunzătoare poziției mouse-ului
+## 🛠️ Technologies Used
 
-- afișare bubble chart pentru un an selectat de utilizator folosind un element de tip canvas (grafică raster)
-  
-- animație bubble chart (afișare bubble chart succesiv pentru toți anii)
-  
-- afișare sub formă de tabel a datelor disponibile pentru un an selectat de către utilizator (tarile pe linii și cei trei
-indicatori pe coloană); fiecare celulă primeste o culoare (de la roșu la verde) în funcție de distanța față de media
-uniunii
+* **HTML5**
+* **CSS3**
+* **JavaScript (Vanilla)**
+* **SVG for Data Visualization**([GitHub][1])
+
+## 📁 Project Structure
+
+* `3_1094_PIRVAN_Vlad-Alexandru.html` – Main HTML file.
+* `3_1094_PIRVAN_Vlad-Alexandru.css` – Stylesheet for layout and design.
+* `3_1094_PIRVAN_Vlad-Alexandru.js` – JavaScript logic for data handling and interactivity.
+* `media/` – Directory containing any media assets (e.g., images, icons).
+
+## 🚀 Getting Started
+
+1. **Clone the repository**:
+
+   ```bash
+   git clone https://github.com/vladinski12/multimedia-project.git
+   ```
+
+
+2\. **Navigate to the project directory**:([GitHub][2])
+
+```bash
+cd multimedia-project
+```
+
+
+3\. **Open the HTML file in your browser**:([cegwlkac.blob.core.windows.net][3])
+
+```bash
+open 3_1094_PIRVAN_Vlad-Alexandru.html
+```
+
+
+
+Alternatively, you can double-click the HTML file to open it in your default browser.
+
+## 📊 Data Source
+
+The application utilizes publicly available datasets detailing GDP per capita, life expectancy, and population statistics for EU countries from 2000 to 2018.
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
