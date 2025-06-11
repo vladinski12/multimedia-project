@@ -183,16 +183,14 @@ const createSVG = (data) => {
     const bar = document.createElementNS("http://www.w3.org/2000/svg", "rect");
     bar.setAttribute("class", "bar");
     bar.setAttribute("x", index * (barWidth + spacing));
+    const barHeight =
+      (obj.valoare / maxValue) * (container.clientHeight - yOffset);
     bar.setAttribute(
       "y",
-      container.clientHeight -
-        ((obj.valoare / maxValue) * container.clientHeight - yOffset)
+      container.clientHeight - yOffset - barHeight
     );
     bar.setAttribute("width", barWidth);
-    bar.setAttribute(
-      "height",
-      (obj.valoare / maxValue) * (container.clientHeight - yOffset)
-    );
+    bar.setAttribute("height", barHeight);
     bar.setAttribute("fill", "darkblue");
     svg.appendChild(bar);
 
@@ -311,7 +309,7 @@ const drawBubbleChart = (year, withLegend = true) => {
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, 2 * Math.PI);
       const color = randomColor();
-      ctx.fillStyle = randomColor();
+      ctx.fillStyle = color;
       if (withLegend) insertLegend(data.tara, color);
       ctx.fill();
       ctx.stroke();
